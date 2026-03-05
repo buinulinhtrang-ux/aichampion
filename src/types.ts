@@ -46,6 +46,16 @@ export interface ApprovalRequest {
   budget_plan?: string;
   budget_code?: string;
   notes?: string;
+  proposal_overview?: string;
+  proposal_time?: string;
+  proposal_location?: string;
+  proposal_chairperson?: string;
+  proposal_form?: string;
+  proposal_target?: string;
+  proposal_requirements?: string;
+  proposal_method_support?: string;
+  proposal_costs?: string;
+  proposal_results?: string;
   created_at: string;
   items?: RequestItem[];
 }

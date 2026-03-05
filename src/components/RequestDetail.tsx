@@ -78,6 +78,18 @@ export default function RequestDetail({ requestId, currentUser, onApprove, onBac
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
 
+  const parseJSON = (jsonString: any, fallback: any = []) => {
+    if (!jsonString || typeof jsonString !== 'string') return fallback;
+    try {
+      return JSON.parse(jsonString);
+    } catch (e) {
+      return fallback;
+    }
+  };
+
+  const methodSupport = request.type === 'PROPOSAL' ? parseJSON(request.proposal_method_support) : [];
+  const proposalCosts = request.type === 'PROPOSAL' ? parseJSON(request.proposal_costs) : [];
+
   if (loading || !request) return <div className="p-8 text-center">Đang tải...</div>;
 
   return (
@@ -158,47 +170,164 @@ export default function RequestDetail({ requestId, currentUser, onApprove, onBac
               </div>
             </div>
 
-            {/* Items Table */}
-            <div className="p-10 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-stone-400 flex items-center gap-2">
-                <Calculator size={16} />
-                Chi tiết hàng hoá / dịch vụ
-              </h3>
-              <div className="overflow-x-auto border border-stone-100 rounded-2xl">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-stone-50/50 border-b border-stone-100">
-                      <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-12 text-center">STT</th>
-                      <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Tên hàng hoá</th>
-                      <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Quy cách</th>
-                      <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-20 text-center">Đơn vị</th>
-                      <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-20 text-center">SL</th>
-                      <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-32 text-right">Đơn giá</th>
-                      <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-32 text-right">Thành tiền</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-stone-50">
-                    {items.map((item, index) => (
-                      <tr key={index} className="text-sm">
-                        <td className="px-4 py-3 text-center font-bold text-stone-300">{index + 1}</td>
-                        <td className="px-4 py-3 font-bold text-stone-900">{item.item_name}</td>
-                        <td className="px-4 py-3 text-stone-500">{item.specs}</td>
-                        <td className="px-4 py-3 text-center">{item.unit}</td>
-                        <td className="px-4 py-3 text-center font-bold">{item.purchase_qty}</td>
-                        <td className="px-4 py-3 text-right font-mono">{item.unit_price?.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right font-mono font-bold text-stone-900">{item.amount?.toLocaleString()}</td>
+            {/* Items Table or Proposal Content */}
+            {request.type === 'PR' ? (
+              <div className="p-10 space-y-4">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-stone-400 flex items-center gap-2">
+                  <Calculator size={16} />
+                  Chi tiết hàng hoá / dịch vụ
+                </h3>
+                <div className="overflow-x-auto border border-stone-100 rounded-2xl">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-stone-50/50 border-b border-stone-100">
+                        <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-12 text-center">STT</th>
+                        <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Tên hàng hoá</th>
+                        <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Quy cách</th>
+                        <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-20 text-center">Đơn vị</th>
+                        <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-20 text-center">SL</th>
+                        <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-32 text-right">Đơn giá</th>
+                        <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-32 text-right">Thành tiền</th>
                       </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-stone-50/30 font-bold">
-                      <td colSpan={6} className="px-4 py-4 text-right text-[10px] uppercase tracking-widest text-stone-400">Tổng cộng</td>
-                      <td className="px-4 py-4 text-right text-lg font-mono text-indigo-600">{formatCurrency(request.amount)}</td>
-                    </tr>
-                  </tfoot>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-stone-50">
+                      {items.map((item, index) => (
+                        <tr key={index} className="text-sm">
+                          <td className="px-4 py-3 text-center font-bold text-stone-300">{index + 1}</td>
+                          <td className="px-4 py-3 font-bold text-stone-900">{item.item_name}</td>
+                          <td className="px-4 py-3 text-stone-500">{item.specs}</td>
+                          <td className="px-4 py-3 text-center">{item.unit}</td>
+                          <td className="px-4 py-3 text-center font-bold">{item.purchase_qty}</td>
+                          <td className="px-4 py-3 text-right font-mono">{item.unit_price?.toLocaleString()}</td>
+                          <td className="px-4 py-3 text-right font-mono font-bold text-stone-900">{item.amount?.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-stone-50/30 font-bold">
+                        <td colSpan={6} className="px-4 py-4 text-right text-[10px] uppercase tracking-widest text-stone-400">Tổng cộng</td>
+                        <td className="px-4 py-4 text-right text-lg font-mono text-indigo-600">{formatCurrency(request.amount)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-10 space-y-10">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-2">1. Tổng quan</h3>
+                  <p className="text-stone-700 leading-relaxed whitespace-pre-wrap">{request.proposal_overview || '—'}</p>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-2">2. Thông tin chính</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Thời gian dự kiến áp dụng</p>
+                      <p className="font-bold text-stone-900">{request.proposal_time || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Địa điểm</p>
+                      <p className="font-bold text-stone-900">{request.proposal_location || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Người chủ trì</p>
+                      <p className="font-bold text-stone-900">{request.proposal_chairperson || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Hình thức tổ chức</p>
+                      <p className="font-bold text-stone-900">{request.proposal_form || '—'}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Đối tượng áp dụng</p>
+                      <p className="font-bold text-stone-900">{request.proposal_target || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-2">3. Yêu cầu cụ thể</h3>
+                  <p className="text-stone-700 leading-relaxed whitespace-pre-wrap">{request.proposal_requirements || '—'}</p>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-2">4. Cách thức tổ chức & Đề nghị hỗ trợ từ các bộ phận:</h3>
+                  <div className="overflow-x-auto border border-stone-100 rounded-2xl">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-stone-50/50 border-b border-stone-100">
+                          <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-12 text-center">STT</th>
+                          <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-1/3">Tên bộ phận</th>
+                          <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Nội dung</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-50">
+                        {methodSupport.map((item: any, index: number) => (
+                          <tr key={index} className="text-sm">
+                            <td className="px-4 py-3 text-center font-bold text-stone-300">{index + 1}</td>
+                            <td className="px-4 py-3 font-bold text-stone-900">{item.dept_name || '—'}</td>
+                            <td className="px-4 py-3 text-stone-600 whitespace-pre-wrap">{item.content || '—'}</td>
+                          </tr>
+                        ))}
+                        {methodSupport.length === 0 && (
+                          <tr>
+                            <td colSpan={3} className="px-4 py-8 text-center text-stone-400 italic">Không có thông tin hỗ trợ</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-2">5. Chi phí tổ chức</h3>
+                  <div className="overflow-x-auto border border-stone-100 rounded-2xl">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-stone-50/50 border-b border-stone-100">
+                          <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-12 text-center">TT</th>
+                          <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Tên sản phẩm</th>
+                          <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Nội dung</th>
+                          <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-20 text-center">Số lượng</th>
+                          <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-32 text-right">Đơn giá dự kiến</th>
+                          <th className="px-4 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest w-32 text-right">Thành tiền (VND)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-50">
+                        {proposalCosts.map((item: any, index: number) => (
+                          <tr key={index} className="text-sm">
+                            <td className="px-4 py-3 text-center font-bold text-stone-300">{index + 1}</td>
+                            <td className="px-4 py-3 font-bold text-stone-900">{item.product_name || '—'}</td>
+                            <td className="px-4 py-3 text-stone-500">{item.content || '—'}</td>
+                            <td className="px-4 py-3 text-center font-bold">{item.quantity || 0}</td>
+                            <td className="px-4 py-3 text-right font-mono">{item.unit_price?.toLocaleString()}</td>
+                            <td className="px-4 py-3 text-right font-mono font-bold text-stone-900">{item.amount?.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                        {proposalCosts.length === 0 && (
+                          <tr>
+                            <td colSpan={6} className="px-4 py-8 text-center text-stone-400 italic">Không có thông tin chi phí</td>
+                          </tr>
+                        )}
+                      </tbody>
+                      {proposalCosts.length > 0 && (
+                        <tfoot>
+                          <tr className="bg-stone-50/30 font-bold">
+                            <td colSpan={5} className="px-4 py-4 text-right text-[10px] uppercase tracking-widest text-stone-400">Tổng cộng chi phí</td>
+                            <td className="px-4 py-4 text-right text-lg font-mono text-indigo-600">{formatCurrency(request.amount)}</td>
+                          </tr>
+                        </tfoot>
+                      )}
+                    </table>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-2">6. Kết quả dự kiến</h3>
+                  <p className="text-stone-700 leading-relaxed whitespace-pre-wrap">{request.proposal_results || '—'}</p>
+                </div>
+              </div>
+            )}
 
             {/* Notes Section */}
             <div className="p-10 bg-stone-50/30 border-t border-stone-100 grid grid-cols-1 md:grid-cols-2 gap-10">

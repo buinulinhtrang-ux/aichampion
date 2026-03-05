@@ -41,6 +41,16 @@ db.exec(`
     budget_plan TEXT,
     budget_code TEXT,
     notes TEXT,
+    proposal_overview TEXT,
+    proposal_time TEXT,
+    proposal_location TEXT,
+    proposal_chairperson TEXT,
+    proposal_form TEXT,
+    proposal_target TEXT,
+    proposal_requirements TEXT,
+    proposal_method_support TEXT,
+    proposal_costs TEXT,
+    proposal_results TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (requester_id) REFERENCES users (id)
   );
@@ -71,6 +81,41 @@ db.exec(`
     FOREIGN KEY (approver_id) REFERENCES users (id)
   );
 `);
+
+// Migration: Add new columns if they don't exist
+const columnsToAdd = [
+  { name: 'request_group', type: 'TEXT' },
+  { name: 'deadline_days', type: 'INTEGER' },
+  { name: 'leadtime', type: 'TEXT' },
+  { name: 'po_number', type: 'TEXT' },
+  { name: 'budget_plan', type: 'TEXT' },
+  { name: 'budget_code', type: 'TEXT' },
+  { name: 'notes', type: 'TEXT' },
+  { name: 'proposal_overview', type: 'TEXT' },
+  { name: 'proposal_time', type: 'TEXT' },
+  { name: 'proposal_location', type: 'TEXT' },
+  { name: 'proposal_chairperson', type: 'TEXT' },
+  { name: 'proposal_form', type: 'TEXT' },
+  { name: 'proposal_target', type: 'TEXT' },
+  { name: 'proposal_requirements', type: 'TEXT' },
+  { name: 'proposal_method_support', type: 'TEXT' },
+  { name: 'proposal_costs', type: 'TEXT' },
+  { name: 'proposal_results', type: 'TEXT' }
+];
+
+const tableInfo = db.prepare("PRAGMA table_info(requests)").all() as any[];
+const existingColumns = tableInfo.map(col => col.name);
+
+for (const col of columnsToAdd) {
+  if (!existingColumns.includes(col.name)) {
+    try {
+      db.exec(`ALTER TABLE requests ADD COLUMN ${col.name} ${col.type}`);
+      console.log(`Added column ${col.name} to requests table`);
+    } catch (err) {
+      console.error(`Error adding column ${col.name}:`, err);
+    }
+  }
+}
 
 // Seed initial users if empty
 const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number };
@@ -150,7 +195,11 @@ async function startServer() {
     const { 
       title, description, amount, type, requester_id,
       request_group, deadline_days, leadtime, po_number,
-      budget_plan, budget_code, notes, items
+      budget_plan, budget_code, notes, items,
+      proposal_overview, proposal_time, proposal_location,
+      proposal_chairperson, proposal_form, proposal_target,
+      proposal_requirements, proposal_method_support,
+      proposal_costs, proposal_results
     } = req.body;
     
     // Get requester's department
@@ -163,13 +212,21 @@ async function startServer() {
           INSERT INTO requests (
             title, description, amount, type, status, current_approver_role, 
             requester_id, department, request_group, deadline_days, 
-            leadtime, po_number, budget_plan, budget_code, notes
+            leadtime, po_number, budget_plan, budget_code, notes,
+            proposal_overview, proposal_time, proposal_location,
+            proposal_chairperson, proposal_form, proposal_target,
+            proposal_requirements, proposal_method_support,
+            proposal_costs, proposal_results
           )
-          VALUES (?, ?, ?, ?, 'PENDING', 'MANAGER', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, 'PENDING', 'MANAGER', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           title, description, amount, type, requester_id, requester.department,
           request_group, deadline_days, leadtime, po_number,
-          budget_plan, budget_code, notes
+          budget_plan, budget_code, notes,
+          proposal_overview, proposal_time, proposal_location,
+          proposal_chairperson, proposal_form, proposal_target,
+          proposal_requirements, proposal_method_support,
+          proposal_costs, proposal_results
         );
 
         const requestId = insertRequest.lastInsertRowid;
